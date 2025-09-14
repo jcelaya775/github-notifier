@@ -16,10 +16,10 @@ tasks:
     generates:
       - node_modules/*
     preconditions:
-      - sh: pnpm version
-        msg: "Looks like pnpm isn't installed. pnpm is part of the Node installer: https://nodejs.org/en/download/"
+      - sh: npm version
+        msg: "Looks like npm isn't installed. npm is part of the Node installer: https://nodejs.org/en/download/"
     cmds:
-      - pnpm install
+      - npm install
 
   build:frontend:
     label: build:frontend (PRODUCTION={{.PRODUCTION}})
@@ -36,7 +36,7 @@ tasks:
           BUILD_FLAGS:
             ref: .BUILD_FLAGS
     cmds:
-      - pnpm run {{.BUILD_COMMAND}} -q
+      - npm run {{.BUILD_COMMAND}} -q
     env:
       PRODUCTION: '{{.PRODUCTION | default "false"}}'
     vars:
@@ -77,7 +77,7 @@ tasks:
     deps:
       - task: install:frontend:deps
     cmds:
-      - pnpm run dev -- --port {{.VITE_PORT}} --strictPort
+      - npm run dev -- --port {{.VITE_PORT}} --strictPort
 
   update:build-assets:
     summary: Updates the build assets
