@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	_ "embed"
+	"fmt"
 	"log"
 	"time"
 
@@ -41,21 +42,48 @@ func main() {
 		},
 	})
 
+	systray := app.SystemTray.New()
+
+	// System tray icons
+	var iconFS embed.FS
+	lightModeIconBytes, _ := iconFS.ReadFile("assets/github-dark.png")
+	darkModeIconBytes, _ := iconFS.ReadFile("assets/github-light.png")
+
+	systray.SetIcon(lightModeIconBytes)
+	systray.SetDarkModeIcon(darkModeIconBytes)
+
+	// System tray tooltip (Windows) and label (macOS)
+	systray.SetTooltip("GitHub Notifier")
+	systray.SetLabel("GitHub Notifier")
+
+	// System tray menu
+	menu := application.NewMenu()
+	menu.Add("Open").OnClick(func(ctx *application.Context) {
+		// Handle click
+		fmt.Println("Open clicked")
+	})
+	menu.Add("Quit").OnClick(func(ctx *application.Context) {
+		app.Quit()
+	})
+
+	systray.SetMenu(menu)
+
 	// Create a new window with the necessary options.
 	// 'Title' is the title of the window.
 	// 'Mac' options tailor the window when running on macOS.
 	// 'BackgroundColour' is the background colour of the window.
 	// 'URL' is the URL that will be loaded into the webview.
-	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "Window 1",
-		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
-			Backdrop:                application.MacBackdropTranslucent,
-			TitleBar:                application.MacTitleBarHiddenInset,
-		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
-		URL:              "/",
-	})
+	//app.Window.NewWithOptions(application.WebviewWindowOptions{
+	//	Title: "Window 1",
+	//	Mac: application.MacWindow{
+	//		InvisibleTitleBarHeight: 50,
+	//		Backdrop:                application.MacBackdropTranslucent,
+	//		TitleBar:                application.MacTitleBarHiddenInset,
+	//	},
+	//	Linux:            application.LinuxWindow{},
+	//	BackgroundColour: application.NewRGB(27, 38, 54),
+	//	URL:              "/",
+	//})
 
 	// Create a goroutine that emits an event containing the current time every second.
 	// The frontend can listen to this event and update the UI accordingly.
