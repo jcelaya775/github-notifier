@@ -4,6 +4,7 @@ import (
 	"embed"
 	_ "embed"
 	"fmt"
+	"github.com/wailsapp/wails/v3/pkg/events"
 	"github.com/wailsapp/wails/v3/pkg/services/badge"
 	"log"
 	"time"
@@ -19,7 +20,7 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-//go:embed assets/github-light.png assets/github-dark.png
+//go:embed assets/*
 var iconFS embed.FS
 
 const APP_TITLE = "GitHub Notifier"
@@ -52,7 +53,13 @@ func main() {
 			Handler: application.AssetFileServerFS(assets),
 		},
 		Mac: application.MacOptions{
-			ApplicationShouldTerminateAfterLastWindowClosed: true,
+			ApplicationShouldTerminateAfterLastWindowClosed: false,
+		},
+		Windows: application.WindowsOptions{
+			DisableQuitOnLastWindowClosed: false,
+		},
+		Linux: application.LinuxOptions{
+			DisableQuitOnLastWindowClosed: false,
 		},
 	})
 
@@ -64,29 +71,65 @@ func main() {
 	systray.SetIcon(lightModeIconBytes)
 	systray.SetDarkModeIcon(darkModeIconBytes)
 
-	// System tray tooltip (Windows) and label (macOS)
-	systray.SetTooltip(APP_TITLE)
-	systray.SetLabel(APP_TITLE)
-
-	// System tray menu
-	menu := application.NewMenu()
-	menu.Add("Quit").OnClick(func(ctx *application.Context) {
-		app.Quit()
-	})
-
-	systray.SetMenu(menu)
+	// System tray tooltip and label
+	systray.SetTooltip(APP_TITLE) // Windows
 
 	// System tray window
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:  APP_TITLE,
-		Width:  200,
-		Height: 100,
+		Title:         APP_TITLE,
+		Frameless:     true,
+		Width:         500,
+		Height:        400,
+		DisableResize: true,
+		//AlwaysOnTop:      true,
+		Hidden: true,
+		//StartState:       application.WindowStateMinimised,
+		//CloseButtonState: application.ButtonDisabled,
+		// Position the window right below the system tray icon
+		InitialPosition: application.WindowXY,
+		//X: ,
+		//Y: ,
+		DevToolsEnabled: true,
 	})
+
+	app.Event.On("escape-pressed", func(event *application.CustomEvent) {
+		fmt.Println("Escape pressed!")
+		windowIsVisible = false
+		window.Hide()
+	})
+
+	window.RegisterHook(events.Common.WindowLostFocus, func(event *application.WindowEvent) {
+		window.Hide()
+	})
+	//// Close window when clicking outside
+	//window.OnWindowEvent(events.Common.WindowLostFocus, func(event *application.WindowEvent) {
+	//	window.Close()
+	//})
+
+	//window.OnWindowEvent(events.Common.key)
+
+	//window.OnWindowEvent(events.Common.)
 	systray.AttachWindow(window)
 
+	// System tray menu
+	//menu := application.NewMenu()
+	//menu.Add("Quit").OnClick(func(ctx *application.Context) {
+	//	app.Quit()
+	//})
+	//
+	//systray.SetMenu(menu)
+
 	systray.OnClick(func() {
-		fmt.Println("Clicked on tray icon")
-		window.Show()
+		if !window.IsVisible() {
+			windowIsVisible = true
+			window.SetAlwaysOnTop(true)
+			window.Show()
+			window.Focus()
+			window.SetAlwaysOnTop(false)
+		} else {
+			windowIsVisible = false
+			window.Hide()
+		}
 	})
 
 	// Create a new window with the necessary options.
