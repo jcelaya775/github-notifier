@@ -5,8 +5,8 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/wailsapp/wails/v3/pkg/events"
-	"github.com/wailsapp/wails/v3/pkg/services/badge"
 	"log"
+	"os/exec"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -23,20 +23,25 @@ var assets embed.FS
 //go:embed assets/*
 var iconFS embed.FS
 
-const APP_TITLE = "GitHub Notifier"
+const AppTitle = "GitHub Notifier"
 
-var windowIsVisible = false
+var frontMostAppId string
+
+// get frontmost app bundle ID
+func getFrontmostAppId() (string, error) {
+	out, err := exec.Command("osascript", "-e", `tell application "System Events" to get bundle identifier of first application process whose frontmost is true`).Output()
+	return string(out), err
+}
+
+// re-focus previously active app
+func focusApp(bundleID string) error {
+	return exec.Command("open", "-b", bundleID).Run()
+}
 
 // main function serves as the application's entry point. It initializes the application, creates a window,
 // and starts a goroutine that emits a time-based event every second. It subsequently runs the application and
 // logs any error that might occur.
 func main() {
-	// System tray notification count badge
-	badgeService := badge.New()
-	if err := badgeService.SetBadge("3"); err != nil {
-		log.Fatal(err)
-	}
-
 	// Create a new Wails application by providing the necessary options.
 	// Variables 'Name' and 'Description' are for application metadata.
 	// 'Assets' configures the asset server with the 'FS' variable pointing to the frontend files.
@@ -47,7 +52,6 @@ func main() {
 		Description: "A demo of using raw HTML & CSS",
 		Services: []application.Service{
 			application.NewService(&GreetService{}),
-			application.NewService(badgeService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -72,81 +76,60 @@ func main() {
 	systray.SetDarkModeIcon(darkModeIconBytes)
 
 	// System tray tooltip and label
-	systray.SetTooltip(APP_TITLE) // Windows
+	systray.SetTooltip(AppTitle) // Windows
 
 	// System tray window
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:         APP_TITLE,
+		Title:         AppTitle,
 		Frameless:     true,
+		Hidden:        true,
 		Width:         500,
 		Height:        400,
 		DisableResize: true,
-		//AlwaysOnTop:      true,
-		Hidden: true,
-		//StartState:       application.WindowStateMinimised,
-		//CloseButtonState: application.ButtonDisabled,
-		// Position the window right below the system tray icon
-		InitialPosition: application.WindowXY,
-		//X: ,
-		//Y: ,
-		DevToolsEnabled: true,
 	})
 
 	app.Event.On("escape-pressed", func(event *application.CustomEvent) {
 		fmt.Println("Escape pressed!")
-		windowIsVisible = false
 		window.Hide()
 	})
 
 	window.RegisterHook(events.Common.WindowLostFocus, func(event *application.WindowEvent) {
 		window.Hide()
 	})
-	//// Close window when clicking outside
-	//window.OnWindowEvent(events.Common.WindowLostFocus, func(event *application.WindowEvent) {
-	//	window.Close()
-	//})
 
-	//window.OnWindowEvent(events.Common.key)
-
-	//window.OnWindowEvent(events.Common.)
-	systray.AttachWindow(window)
-
-	// System tray menu
-	//menu := application.NewMenu()
-	//menu.Add("Quit").OnClick(func(ctx *application.Context) {
-	//	app.Quit()
+	//window.RegisterHook(events.Common.WindowFocus, func(event *application.WindowEvent) {
+	//	fmt.Println("Window shown!")
+	//	//
+	//	//	appId, err := getFrontmostAppId()
+	//	//	if err != nil {
+	//	//		fmt.Printf("Error getting frontmost app: %v\n", err)
+	//	//	}
+	//	//	fmt.Printf("Frontmost app before showing: %s\n", appId)
+	//	//	frontMostAppId = appId
 	//})
 	//
-	//systray.SetMenu(menu)
+	//window.RegisterHook(events.Common.WindowLostFocus, func(event *application.WindowEvent) {
+	//	fmt.Println("Window unfocusing!")
+	//
+	//	//fmt.Printf("Frontmost app before refocus: %s\n", frontMostAppId)
+	//	//if frontMostAppId != "" {
+	//	//	if err := focusApp(frontMostAppId); err != nil {
+	//	//		fmt.Printf("Error refocusing app: %v\n", err)
+	//	//	}
+	//	//}
+	//})
 
-	systray.OnClick(func() {
-		if !window.IsVisible() {
-			windowIsVisible = true
-			window.SetAlwaysOnTop(true)
-			window.Show()
-			window.Focus()
-			window.SetAlwaysOnTop(false)
-		} else {
-			windowIsVisible = false
-			window.Hide()
-		}
-	})
+	systray.AttachWindow(window)
 
-	// Create a new window with the necessary options.
-	// 'Title' is the title of the window.
-	// 'Mac' options tailor the window when running on macOS.
-	// 'BackgroundColour' is the background colour of the window.
-	// 'URL' is the URL that will be loaded into the webview.
-	//app.Window.NewWithOptions(application.WebviewWindowOptions{
-	//	Title: "Window 1",
-	//	Mac: application.MacWindow{
-	//		InvisibleTitleBarHeight: 50,
-	//		Backdrop:                application.MacBackdropTranslucent,
-	//		TitleBar:                application.MacTitleBarHiddenInset,
-	//	},
-	//	Linux:            application.LinuxWindow{},
-	//	BackgroundColour: application.NewRGB(27, 38, 54),
-	//	URL:              "/",
+	//systray.OnClick(func() {
+	//	if !window.IsVisible() {
+	//		window.SetAlwaysOnTop(true)
+	//		window.Show()
+	//		window.Focus()
+	//		window.SetAlwaysOnTop(false)
+	//	} else {
+	//		window.Hide()
+	//	}
 	//})
 
 	// Create a goroutine that emits an event containing the current time every second.
