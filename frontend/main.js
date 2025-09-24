@@ -1,5 +1,5 @@
 import { Events } from "@wailsio/runtime";
-import { GreetService } from "./bindings/github.com/jcelaya775/github-notifier/index.js";
+import { GitHubAPIService, GreetService } from "./bindings/github.com/jcelaya775/github-notifier/index.js";
 
 const resultElement = document.getElementById("result");
 const timeElement = document.getElementById("time");
@@ -25,6 +25,11 @@ document.addEventListener("keydown", async (e) => {
     });
   }
 });
+
+(async () => {
+  const notifications = await GitHubAPIService.GetNotifications();
+  console.log("Notifications:", notifications);
+})();
 
 Events.On("time", (time) => {
   timeElement.innerText = time.data;
