@@ -1,20 +1,26 @@
 <script lang="ts">
   import "./style.css";
   import logo from "./assets/images/logo-universal.png";
-  import { GreetService } from "../bindings/github.com/jcelaya775/github-notifier";
+  import {
+    GreetService,
+    GitHubAPIService,
+  } from "../bindings/github.com/jcelaya775/github-notifier";
 
   let resultText = $state("Please enter your name below 👇");
   let name: string = $state();
 
   async function greet() {
-    // const result = GreetService.Greet(name);
     GreetService.Greet(name).then((result) => (resultText = result));
   }
 
-  // $effect(async () => {
-  //   const notifications = await GitHubAPIService.GetNotifications()
-  //   console.log({notifications});
-  // })
+  async function getNotifications() {
+    const notifications = await GitHubAPIService.GetNotifications();
+    console.log({ notifications });
+  }
+
+  $effect(() => {
+    getNotifications();
+  });
 </script>
 
 <main>
