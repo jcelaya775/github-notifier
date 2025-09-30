@@ -1,96 +1,41 @@
 <script lang="ts">
+  // import "./app.css";
   import "./style.css";
-  import logo from "./assets/images/logo-universal.png";
   import {
-    GreetService,
     GitHubAPIService,
+    Notification,
   } from "../bindings/github.com/jcelaya775/github-notifier";
+  import { Events } from "@wailsio/runtime";
+  import { onMount } from "svelte";
 
-  let resultText = $state("Please enter your name below 👇");
-  let name: string = $state();
+  let notifications = $state<Notification[]>();
 
-  async function greet() {
-    GreetService.Greet(name).then((result) => (resultText = result));
+  function handleKeydown(event: KeyboardEvent) {
+    console.log(event.key);
+    if (event.key === "Escape") {
+      Events.Emit("escape-pressed");
+    }
   }
 
-  async function getNotifications() {
-    const notifications = await GitHubAPIService.GetNotifications();
-    console.log({ notifications });
-  }
-
-  $effect(() => {
-    getNotifications();
+  onMount(async () => {
+    notifications = await GitHubAPIService.GetNotifications();
   });
+
+  $inspect(notifications)
 </script>
 
-<main>
-  <img alt="Wails logo" id="logo" src={logo} />
-  <div class="result" id="result">{resultText}</div>
-  <div class="input-box" id="input">
-    <input
-      autocomplete="off"
-      bind:value={name}
-      class="input"
-      id="name"
-      type="text"
-    />
-    <button class="btn" onclick={greet}>Greet</button>
+<!--<svelte:document on:keydown={handleKeydown} />-->
+
+<main class="p-4">
+  <h2 class="text-2xl mb-8" style="font-family: 'Hubot Sans'">
+    Github Notifier
+  </h2>
+
+  <div>
+    {#each notifications as notification}
+      <p>{notification.subject.title}</p>
+    {/each}
   </div>
 </main>
 
-<style>
-  #logo {
-    display: block;
-    width: 50%;
-    height: 50%;
-    margin: auto;
-    padding: 10% 0 0;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    background-origin: content-box;
-  }
-
-  .result {
-    height: 20px;
-    line-height: 20px;
-    margin: 1.5rem auto;
-  }
-
-  .input-box .btn {
-    width: 60px;
-    height: 30px;
-    line-height: 30px;
-    border-radius: 3px;
-    border: none;
-    margin: 0 0 0 20px;
-    padding: 0 8px;
-    cursor: pointer;
-  }
-
-  .input-box .btn:hover {
-    background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
-    color: #333333;
-  }
-
-  .input-box .input {
-    border: none;
-    border-radius: 3px;
-    outline: none;
-    height: 30px;
-    line-height: 30px;
-    padding: 0 10px;
-    background-color: rgba(240, 240, 240, 1);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .input-box .input:hover {
-    border: none;
-    background-color: rgba(255, 255, 255, 1);
-  }
-
-  .input-box .input:focus {
-    border: none;
-    background-color: rgba(255, 255, 255, 1);
-  }
-</style>
+<style></style>

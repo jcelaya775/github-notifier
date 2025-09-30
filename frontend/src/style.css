@@ -1,5 +1,5 @@
 html {
-  background-color: rgba(27, 38, 54, 1);
+  background-color: rgba(13, 17, 23, 1);
   text-align: center;
   color: white;
 }
@@ -8,6 +8,7 @@ body {
   margin: 0;
   color: white;
   font-family:
+    "Mona Sans",
     "Nunito",
     -apple-system,
     BlinkMacSystemFont,
@@ -34,4 +35,6 @@ body {
 #app {
   height: 100vh;
   text-align: center;
+  margin: 0;
+  padding: 0;
 }

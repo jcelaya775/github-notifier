@@ -38,7 +38,6 @@ func main() {
 		Name:        AppTitle,
 		Description: "A demo of using raw HTML & CSS",
 		Services: []application.Service{
-			application.NewService(&GreetService{}),
 			application.NewService(&GitHubAPIService{
 				httpClient: http.DefaultClient,
 				token:      os.Getenv("GITHUB_TOKEN"), // TODO(later): Support multiple authentication methods
